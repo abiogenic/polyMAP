@@ -19,11 +19,10 @@ def main(output_dir_current,repeat,organelle):
 	fileNameList = glob.glob(os.path.join("*.vcf"))
 
 	print(fileNameList)
-	quit()
 
 	""" GET SEEDS """
 
-	if iterateOverSeedList:
+	if repeat:
 		seedList = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 	else:
 		seedList = [123]
@@ -87,7 +86,7 @@ def main(output_dir_current,repeat,organelle):
 
 			rawDataSorted = []
 			for i in rawData:
-				sortedListOfLociForEachIndividual = sorted(i, key = itemgetter(2))
+				sortedListOfLociForEachIndividual = sorted(i, key = itemgetter(-1))
 				rawDataSorted.append(sortedListOfLociForEachIndividual)
 
 			#print(rawDataSorted)
@@ -108,7 +107,7 @@ def main(output_dir_current,repeat,organelle):
 				new_df_list.append(new_line)
 			columns_labels = [str(i[0]+" "+i[1]) for i in listOfPositionsForLociSorted]
 			df = pd.DataFrame(new_df_list, columns=columns_labels, index=fileNameList)
-			print(df)
+			print(columns_labels,df)
 			df.to_csv(str(organelle+'.csv'), sep="\t")
 
 
@@ -116,26 +115,42 @@ def main(output_dir_current,repeat,organelle):
 
 			haplotypeList = []
 
-			addedHaplotype1 = True
-			addedHaplotype2 = True
-
 			runCycleCount = 0
 
-			# until no new haplotypes are added:
-			while addedHaplotype1 or addedHaplotype2:
-				hetMin = 1000000
-				runCycleCount = runCycleCount + 1
+			haplotype_not_added = False
 
-				""" FIND LEAST-SITE HETETROZYGOTES """
+			while not haplotype_not_added:
+			
+				for file_key in range(0,len(fileNameList)):
+					het_count = 0
+					potential_haplotype = {}
 
-				for key in fileNames:
-					hf.heterozygote_count(rawDataSorted[key])
-					quit()
+					individual = rawDataSorted[file_key]
+					number_of_sites = len(individual)
+					for locus in range(0,number_of_sites):
+						site = individual[locus]
+						alleles = [i[0] for i in site[:-1]]
+						
+						if len(alleles) == 1:
+							pass
+						else:
+							het_count = het_count + 1
+						
+						if het_count <= 1:
+							potential_haplotype[site[-1][0]] = alleles[0]
+						else:
+							break
+					if het_count <= 1:
+						if potential_haplotype not in haplotypeList:
+							haplotypeList.append(potential_haplotype)
 
-				quit()
+				# print(haplotypeList)
+				# print(len(haplotypeList))
 
 				#for individual in individualList:
-					
+				for file_key in range(0,len(fileNameList)):
+					individual = rawDataSorted[file_key]
+					number_of_sites = len(individual)
 
 				# iterate over each individual
 					# check each site, if they are heterozygous, add 1
